@@ -3,6 +3,7 @@
 #include "rlgl.h"
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h>
 // #include <stdlib.h>
 
 // #include <stdio.h>
@@ -23,14 +24,14 @@ struct grid {
 
 int mouseX, mouseY, x, y;
 bool alt, alt_ms;
-
+uint32_t rng_state = 0xdeadbeef;
 void drawGrid();
 void drawUpdate();
 void incLogic();
 void init();
 void resetBot();
 bool coinFlip();
-
+void cellOp(int i, int j);
 uint32_t xorshift32();
 
 int main() {
@@ -42,9 +43,9 @@ int main() {
   SetTargetFPS(framerate);
   InitWindow(screenWidth, screenHeight, "SAMD");
   init();
+  alt = true;
   while (!WindowShouldClose()) {
 
-    alt = true;
     BeginDrawing();
 
     ClearBackground(DARKGRAY);
@@ -66,17 +67,17 @@ int main() {
       grid[y][x - 2].st = true;
       grid[y][x + 4].st = true;
       grid[y][x - 4].st = true;
-      grid[y - 2][x].st = true;
-      grid[y - 2][x + 1].st = true;
-      grid[y - 2][x - 1].st = true;
-      grid[y - 2][x - 3].st = true;
-      grid[y - 2][x + 3].st = true;
-
-    } else {
-      grid[y][x].st = false;
-      grid[y][x + 2].st = false;
-      grid[y][x - 2].st = false;
+      // grid[y - 2][x].st = true;
+      // grid[y - 2][x + 1].st = true;
+      // grid[y - 2][x - 1].st = true;
+      // grid[y - 2][x - 3].st = true;
+      // grid[y - 2][x + 3].st = true;
     }
+    // else {
+    //   grid[y][x].st = false;
+    //   grid[y][x + 2].st = false;
+    //   grid[y][x - 2].st = false;
+    // }
     // printf("%d %d \n", x, y);
 
     // drawGrid();
@@ -100,36 +101,58 @@ void init() {
     for (int j = 0; j < grid_size; j++) {
 
       grid[i][j].st = false;
-      grid[i][j].col = LIGHTGRAY;
     }
   }
 }
 
 void incLogic() {
-
-  for (int i = grid_size; i > 0; i--) {
-    for (int j = 0; j < grid_size; j++) {
-
-      if (grid[i][j].st == true && i < grid_size - 1) {
-
-        if (grid[i + 1][j].st == false) {
-
-          grid[i][j].st = false;
-          grid[i + 1][j].st = true;
-        } else if (grid[i + 1][j + 1].st == false &&
-                   grid[i + 1][j].st == true && alt) {
-
-          grid[i][j].st = false;
-          grid[i + 1][j + 1].st = true;
-          alt = !alt;
-        } else if (grid[i + 1][j - 1].st == false &&
-                   grid[i + 1][j].st == true && !alt) {
-          grid[i][j].st = false;
-          grid[i + 1][j - 1].st = true;
-          alt = !alt;
-        }
+  for (int i = grid_size - 2; i >= 0; i--) {
+    bool leftToRight = (i % 2 == 0);
+    if (leftToRight) {
+      for (int j = 0; j < grid_size; j++) {
+        cellOp(i, j);
+      }
+    } else {
+      for (int j = grid_size - 1; j >= 0; j--) {
+        cellOp(i, j);
       }
     }
+  }
+}
+
+void cellOp(int i, int j) {
+  if (grid[i][j].st == true && i < grid_size - 1 && j > 0 &&
+      j < grid_size - 1) {
+
+    if (grid[i + 1][j].st == false) {
+
+      grid[i][j].st = false;
+      grid[i + 1][j].st = true;
+    } else if (grid[i + 1][j - 1].st == false && grid[i + 1][j].st == true &&
+               coinFlip()) {
+      grid[i][j].st = false;
+      grid[i + 1][j - 1].st = true;
+
+    } else if (grid[i + 1][j + 1].st == false && grid[i + 1][j].st == true &&
+               coinFlip()) {
+
+      grid[i][j].st = false;
+      grid[i + 1][j + 1].st = true;
+    }
+
+    // else if (grid[i + 1][j].st == true && grid[i][j - 1].st == true &&
+    //          grid[i + 1][j - 1].st == true &&
+    //          grid[i + 1][j + 1].st == false) {
+    //   grid[i][j].st = false;
+    //   grid[i + 1][j + 1].st = true;
+    // }
+    //
+    // else if (grid[i + 1][j].st == true && grid[i][j + 1].st == true &&
+    //          grid[i + 1][j + 1].st == true &&
+    //          grid[i + 1][j - 1].st == false) {
+    //   grid[i][j].st = false;
+    //   grid[i + 1][j - 1].st = true;
+    // }
   }
 }
 
@@ -159,4 +182,11 @@ void drawGrid() {
     DrawLine(0, i, screenWidth, i, DARKGRAY);
   for (int i = 0; i < screenHeight; i += pixel_size)
     DrawLine(i, 0, i, screenHeight, DARKGRAY);
+}
+
+bool coinFlip() {
+  rng_state ^= rng_state << 13;
+  rng_state ^= rng_state >> 17;
+  rng_state ^= rng_state << 5;
+  return rng_state & 1;
 }
