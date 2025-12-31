@@ -2,7 +2,7 @@
 #include "raylib.h"
 #include "rlgl.h"
 #include <stdbool.h>
-#include <stdio.h>
+// #include <stdio.h>
 
 #define grid_size 100
 
