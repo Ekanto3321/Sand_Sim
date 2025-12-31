@@ -2,11 +2,16 @@
 #include "raylib.h"
 #include "rlgl.h"
 #include <stdbool.h>
+#include <stdint.h>
+// #include <stdlib.h>
+
 // #include <stdio.h>
 
-#define grid_size 100
+#define grid_size 150
 
-int pixel_size = 8;
+uint32_t rng_state = 0xdeadbeef; // for fast rng
+
+int pixel_size = 6;
 int framerate = 60;
 int reset = 10;
 int screenHeight, screenWidth;
@@ -19,13 +24,16 @@ struct grid {
 } grid[grid_size][grid_size];
 
 int mouseX, mouseY, x, y;
-bool alt, alt_col = true;
+bool alt, alt_ms;
 
 void drawGrid();
 void drawUpdate();
 void incLogic();
 void init();
 void resetBot();
+bool coinFlip();
+
+uint32_t xorshift32();
 
 int main() {
 
@@ -38,9 +46,10 @@ int main() {
   init();
   while (!WindowShouldClose()) {
 
+    alt = true;
     BeginDrawing();
 
-    ClearBackground(BLACK);
+    ClearBackground(DARKGRAY);
     // grid[30][50] = true;
 
     mouseX = GetMouseX();
@@ -49,11 +58,16 @@ int main() {
     x = (int)((float)mouseX / (float)pixel_size);
     y = (int)((float)mouseY / (float)pixel_size);
 
-    if (grid[y][x].st == false) {
+    if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+      alt_ms = !alt_ms;
+    }
 
+    if (grid[y][x].st == false && alt_ms) {
       grid[y][x].st = true;
       grid[y][x + 2].st = true;
       grid[y][x - 2].st = true;
+      grid[y][x + 4].st = true;
+      grid[y][x - 4].st = true;
 
     } else {
       grid[y][x].st = false;
@@ -99,19 +113,17 @@ void incLogic() {
 
           grid[i][j].st = false;
           grid[i + 1][j].st = true;
-
         } else if (grid[i + 1][j + 1].st == false &&
                    grid[i + 1][j].st == true && alt) {
 
           grid[i][j].st = false;
           grid[i + 1][j + 1].st = true;
-          alt = false;
-
+          alt = !alt;
         } else if (grid[i + 1][j - 1].st == false &&
                    grid[i + 1][j].st == true && !alt) {
           grid[i][j].st = false;
           grid[i + 1][j - 1].st = true;
-          alt = true;
+          alt = !alt;
         }
       }
     }
@@ -134,9 +146,6 @@ void drawUpdate() {
       if (grid[i][j].st == true) {
         DrawRectangle(j * pixel_size, i * pixel_size, pixel_size, pixel_size,
                       LIGHTGRAY);
-      } else {
-        DrawRectangle(j * pixel_size, i * pixel_size, pixel_size, pixel_size,
-                      GRAY);
       }
     }
   }
@@ -147,4 +156,26 @@ void drawGrid() {
     DrawLine(0, i, screenWidth, i, DARKGRAY);
   for (int i = 0; i < screenHeight; i += pixel_size)
     DrawLine(i, 0, i, screenHeight, DARKGRAY);
+}
+
+// rng stuff from main
+
+uint32_t xorshift32() {
+  rng_state ^= rng_state << 13;
+  rng_state ^= rng_state >> 17;
+  rng_state ^= rng_state << 5;
+
+  // Tempering - unbiased uniform 32-bit
+  uint32_t t = rng_state;
+  t ^= t >> 16;
+  t *= 0x85ebca6bU;
+  t ^= t >> 13;
+  t *= 0xc2b2ae35U;
+  t ^= t >> 16;
+
+  return t;
+}
+
+bool coinFlip() {
+  return xorshift32() & 1; // Now unbiased
 }
