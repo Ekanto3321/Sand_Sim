@@ -7,9 +7,7 @@
 
 // #include <stdio.h>
 
-#define grid_size 150
-
-uint32_t rng_state = 0xdeadbeef; // for fast rng
+#define grid_size 170
 
 int pixel_size = 6;
 int framerate = 60;
@@ -68,6 +66,11 @@ int main() {
       grid[y][x - 2].st = true;
       grid[y][x + 4].st = true;
       grid[y][x - 4].st = true;
+      grid[y - 2][x].st = true;
+      grid[y - 2][x + 1].st = true;
+      grid[y - 2][x - 1].st = true;
+      grid[y - 2][x - 3].st = true;
+      grid[y - 2][x + 3].st = true;
 
     } else {
       grid[y][x].st = false;
@@ -156,26 +159,4 @@ void drawGrid() {
     DrawLine(0, i, screenWidth, i, DARKGRAY);
   for (int i = 0; i < screenHeight; i += pixel_size)
     DrawLine(i, 0, i, screenHeight, DARKGRAY);
-}
-
-// rng stuff from main
-
-uint32_t xorshift32() {
-  rng_state ^= rng_state << 13;
-  rng_state ^= rng_state >> 17;
-  rng_state ^= rng_state << 5;
-
-  // Tempering - unbiased uniform 32-bit
-  uint32_t t = rng_state;
-  t ^= t >> 16;
-  t *= 0x85ebca6bU;
-  t ^= t >> 13;
-  t *= 0xc2b2ae35U;
-  t ^= t >> 16;
-
-  return t;
-}
-
-bool coinFlip() {
-  return xorshift32() & 1; // Now unbiased
 }
