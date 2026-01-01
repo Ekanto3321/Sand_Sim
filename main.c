@@ -1,4 +1,3 @@
-#include "const.h"
 #include "raylib.h"
 #include "rlgl.h"
 #include <stdbool.h>
