@@ -3,8 +3,8 @@
 #include "rlgl.h"
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
 // #include <stdlib.h>
+//  #include <stdlib.h>
 
 // #include <stdio.h>
 
@@ -14,6 +14,8 @@ int pixel_size = 6;
 int framerate = 60;
 int reset = 10;
 int screenHeight, screenWidth;
+int time = 0;
+Color col = LIGHTGRAY;
 // bool grid[grid_size][grid_size] = {0};
 //
 struct grid {
@@ -32,7 +34,6 @@ void init();
 void resetBot();
 bool coinFlip();
 void cellOp(int i, int j);
-uint32_t xorshift32();
 
 int main() {
 
@@ -48,8 +49,16 @@ int main() {
 
     BeginDrawing();
 
-    ClearBackground(DARKGRAY);
+    ClearBackground(BLACK);
     // grid[30][50] = true;
+
+    // if (time < 400)
+    //   col = PINK;
+    // else if (time < 800)
+    //   col = YELLOW;
+    // else if (time < 1200)
+    //   col = VIOLET;
+    //
 
     mouseX = GetMouseX();
     mouseY = GetMouseY();
@@ -57,6 +66,15 @@ int main() {
     x = (int)((float)mouseX / (float)pixel_size);
     y = (int)((float)mouseY / (float)pixel_size);
 
+    if (IsKeyPressed(KEY_C)) {
+      if (alt) {
+        col = GRAY;
+        alt = !alt;
+      } else {
+        col = LIGHTGRAY;
+        alt = !alt;
+      }
+    }
     if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
       alt_ms = !alt_ms;
     }
@@ -67,18 +85,25 @@ int main() {
       grid[y][x - 2].st = true;
       grid[y][x + 4].st = true;
       grid[y][x - 4].st = true;
+
+      grid[y][x].col = col;
+      grid[y][x + 2].col = col;
+      grid[y][x - 2].col = col;
+      grid[y][x + 4].col = col;
+      grid[y][x - 4].col = col;
+
       // grid[y - 2][x].st = true;
       // grid[y - 2][x + 1].st = true;
       // grid[y - 2][x - 1].st = true;
       // grid[y - 2][x - 3].st = true;
       // grid[y - 2][x + 3].st = true;
+    } else if (grid[y][x].st == true && alt_ms) {
+      grid[y][x].st = false;
+      grid[y][x + 2].st = false;
+      grid[y][x - 2].st = false;
+      grid[y][x + 4].st = false;
+      grid[y][x - 4].st = false;
     }
-    // else {
-    //   grid[y][x].st = false;
-    //   grid[y][x + 2].st = false;
-    //   grid[y][x - 2].st = false;
-    // }
-    // printf("%d %d \n", x, y);
 
     // drawGrid();
     if (IsKeyPressed(KEY_R))
@@ -87,6 +112,10 @@ int main() {
     drawUpdate();
     incLogic();
 
+    if (time == 1200) {
+      time = 0;
+    }
+    time++;
     // drawUpdate();
     EndDrawing();
   }
@@ -128,16 +157,19 @@ void cellOp(int i, int j) {
 
       grid[i][j].st = false;
       grid[i + 1][j].st = true;
+      grid[i + 1][j].col = grid[i][j].col;
+
     } else if (grid[i + 1][j - 1].st == false && grid[i + 1][j].st == true &&
                coinFlip()) {
       grid[i][j].st = false;
       grid[i + 1][j - 1].st = true;
-
+      grid[i + 1][j - 1].col = grid[i][j].col;
     } else if (grid[i + 1][j + 1].st == false && grid[i + 1][j].st == true &&
                coinFlip()) {
 
       grid[i][j].st = false;
       grid[i + 1][j + 1].st = true;
+      grid[i + 1][j + 1].col = grid[i][j].col;
     }
 
     // else if (grid[i + 1][j].st == true && grid[i][j - 1].st == true &&
@@ -171,7 +203,7 @@ void drawUpdate() {
 
       if (grid[i][j].st == true) {
         DrawRectangle(j * pixel_size, i * pixel_size, pixel_size, pixel_size,
-                      LIGHTGRAY);
+                      grid[i][j].col);
       }
     }
   }
