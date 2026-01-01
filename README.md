@@ -11,6 +11,6 @@
 
 - C to alternate colors
 
-## Video
+## Demo
 
 ![demo](./demo.gif)
