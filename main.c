@@ -2,6 +2,7 @@
 #include "rlgl.h"
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdio.h>
 // #include <stdlib.h>
 //  #include <stdlib.h>
 
@@ -14,7 +15,7 @@ int framerate = 60;
 int reset = 10;
 int screenHeight, screenWidth;
 int time = 0;
-Color col = LIGHTGRAY;
+Color col = {252, 243, 117, 255};
 // bool grid[grid_size][grid_size] = {0};
 //
 struct grid {
@@ -24,7 +25,7 @@ struct grid {
 } grid[grid_size][grid_size];
 
 int mouseX, mouseY, x, y;
-bool alt, alt_ms;
+bool alt, alt_ms, alt_auto;
 uint32_t rng_state = 0xdeadbeef;
 void drawGrid();
 void drawUpdate();
@@ -44,20 +45,30 @@ int main() {
   InitWindow(screenWidth, screenHeight, "SAMD");
   init();
   alt = true;
+  alt_auto = true;
   while (!WindowShouldClose()) {
 
     BeginDrawing();
-
     ClearBackground(BLACK);
     // grid[30][50] = true;
 
-    // if (time < 400)
-    //   col = PINK;
-    // else if (time < 800)
-    //   col = YELLOW;
-    // else if (time < 1200)
-    //   col = VIOLET;
-    //
+    if (IsKeyPressed(KEY_A)) {
+      if (alt_auto) {
+        alt_auto = !alt_auto;
+      } else {
+        alt_auto = !alt_auto;
+      }
+      printf("Alt-auto Toggled");
+    }
+
+    if (alt_auto) {
+      if (time < 400)
+        col = (Color){208, 201, 94, 255};
+      else if (time < 800)
+        col = (Color){228, 219, 104, 255};
+      else if (time < 1200)
+        col = (Color){255, 250, 182, 255};
+    }
 
     mouseX = GetMouseX();
     mouseY = GetMouseY();
@@ -67,10 +78,10 @@ int main() {
 
     if (IsKeyPressed(KEY_C)) {
       if (alt) {
-        col = GRAY;
+        col = (Color){208, 201, 94, 255};
         alt = !alt;
       } else {
-        col = LIGHTGRAY;
+        col = (Color){228, 219, 104, 255};
         alt = !alt;
       }
     }
