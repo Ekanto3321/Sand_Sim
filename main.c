@@ -8,13 +8,14 @@
 
 // #include <stdio.h>
 
-#define grid_size 170
+#define grid_size 171
 
 int pixel_size = 6;
 int framerate = 60;
 int reset = 10;
 int screenHeight, screenWidth;
 int time = 0;
+int mid;
 Color col = {252, 243, 117, 255};
 // bool grid[grid_size][grid_size] = {0};
 //
@@ -25,7 +26,7 @@ struct grid {
 } grid[grid_size][grid_size];
 
 int mouseX, mouseY, x, y;
-bool alt, alt_ms, alt_auto;
+bool alt, alt_ms, alt_auto, alt_drain;
 uint32_t rng_state = 0xdeadbeef;
 void drawGrid();
 void drawUpdate();
@@ -34,18 +35,20 @@ void init();
 void resetBot();
 bool coinFlip();
 void cellOp(int i, int j);
+void activateDrain();
 
 int main() {
 
   // grid[50][50] = true;
-  screenHeight = grid_size * pixel_size;
-  screenWidth = grid_size * pixel_size;
+  screenHeight = (grid_size)*pixel_size;
+  screenWidth = (grid_size - 1) * pixel_size;
 
   SetTargetFPS(framerate);
   InitWindow(screenWidth, screenHeight, "SAMD");
   init();
   alt = true;
   alt_auto = true;
+  alt_drain = false;
   while (!WindowShouldClose()) {
 
     BeginDrawing();
@@ -53,21 +56,25 @@ int main() {
     // grid[30][50] = true;
 
     if (IsKeyPressed(KEY_A)) {
-      if (alt_auto) {
-        alt_auto = !alt_auto;
-      } else {
-        alt_auto = !alt_auto;
-      }
+      alt_auto = !alt_auto;
       printf("Alt-auto Toggled");
     }
 
     if (alt_auto) {
       if (time < 400)
-        col = (Color){208, 201, 94, 255};
+        col = (Color){158, 152, 77, 255};
       else if (time < 800)
         col = (Color){228, 219, 104, 255};
       else if (time < 1200)
         col = (Color){255, 250, 182, 255};
+    }
+
+    if (IsKeyPressed(KEY_D)) {
+      alt_drain = !alt_drain;
+    }
+
+    if (alt_drain) {
+      activateDrain();
     }
 
     mouseX = GetMouseX();
@@ -78,7 +85,7 @@ int main() {
 
     if (IsKeyPressed(KEY_C)) {
       if (alt) {
-        col = (Color){208, 201, 94, 255};
+        col = (Color){158, 152, 77, 255};
         alt = !alt;
       } else {
         col = (Color){228, 219, 104, 255};
@@ -107,6 +114,11 @@ int main() {
       // grid[y - 2][x - 1].st = true;
       // grid[y - 2][x - 3].st = true;
       // grid[y - 2][x + 3].st = true;
+
+      if (time == 1200) {
+        time = 0;
+      }
+      time++;
     } else if (grid[y][x].st == true && alt_ms) {
       grid[y][x].st = false;
       grid[y][x + 2].st = false;
@@ -122,10 +134,6 @@ int main() {
     drawUpdate();
     incLogic();
 
-    if (time == 1200) {
-      time = 0;
-    }
-    time++;
     // drawUpdate();
     EndDrawing();
   }
@@ -160,7 +168,7 @@ void incLogic() {
 }
 
 void cellOp(int i, int j) {
-  if (grid[i][j].st == true && i < grid_size - 1 && j > 0 &&
+  if (grid[i][j].st == true && i < grid_size - 1 && j >= 0 &&
       j < grid_size - 1) {
 
     if (grid[i + 1][j].st == false) {
@@ -217,6 +225,16 @@ void drawUpdate() {
       }
     }
   }
+}
+
+void activateDrain() {
+
+  mid = (int)(grid_size / 2);
+  grid[grid_size - 1][mid].st = false;
+  grid[grid_size - 1][mid + 2].st = false;
+  grid[grid_size - 1][mid - 2].st = false;
+  grid[grid_size - 1][mid + 4].st = false;
+  grid[grid_size - 1][mid - 4].st = false;
 }
 
 void drawGrid() {
