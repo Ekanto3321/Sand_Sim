@@ -3,10 +3,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
-// #include <stdlib.h>
-//  #include <stdlib.h>
-
-// #include <stdio.h>
 
 #define grid_size 171
 
@@ -17,8 +13,7 @@ int screenHeight, screenWidth;
 int time = 0;
 int mid;
 Color col = {252, 243, 117, 255};
-// bool grid[grid_size][grid_size] = {0};
-//
+
 struct grid {
   bool st;
   Color col;
