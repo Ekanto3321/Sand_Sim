@@ -11,6 +11,10 @@
 
 - C to alternate colors
 
+- A to toggle auto color mode
+
+- D to enable drain 
+
 ## Demo
 
 ![demo](./demo.gif)
